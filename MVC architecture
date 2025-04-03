@@ -1,0 +1,101 @@
+// Controller: StudentController.java
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class StudentController {
+    private static final String JDBC_URL = "jdbc:mysql://localhost:3306/your_db";
+    private static final String USERNAME = "your_user";
+    private static final String PASSWORD = "your_password";
+
+    static {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+
+    private Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
+    }
+
+    public boolean addStudent(Student student) {
+        String sql = "INSERT INTO Students (Name, Department, Marks) VALUES (?, ?, ?)";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            conn.setAutoCommit(false);
+            pstmt.setString(1, student.getName());
+            pstmt.setString(2, student.getDepartment());
+            pstmt.setDouble(3, student.getMarks());
+            
+            int rows = pstmt.executeUpdate();
+            conn.commit();
+            return rows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public List<Student> getAllStudents() {
+        List<Student> students = new ArrayList<>();
+        String sql = "SELECT * FROM Students";
+        
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                Student student = new Student(
+                    rs.getInt("StudentID"),
+                    rs.getString("Name"),
+                    rs.getString("Department"),
+                    rs.getDouble("Marks")
+                );
+                students.add(student);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return students;
+    }
+
+    public boolean updateStudent(Student student) {
+        String sql = "UPDATE Students SET Name=?, Department=?, Marks=? WHERE StudentID=?";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            conn.setAutoCommit(false);
+            pstmt.setString(1, student.getName());
+            pstmt.setString(2, student.getDepartment());
+            pstmt.setDouble(3, student.getMarks());
+            pstmt.setInt(4, student.getStudentId());
+            
+            int rows = pstmt.executeUpdate();
+            conn.commit();
+            return rows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean deleteStudent(int studentId) {
+        String sql = "DELETE FROM Students WHERE StudentID=?";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            conn.setAutoCommit(false);
+            pstmt.setInt(1, studentId);
+            int rows = pstmt.executeUpdate();
+            conn.commit();
+            return rows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+}
